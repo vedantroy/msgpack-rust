@@ -182,6 +182,21 @@ impl<R: Read, C> Deserializer<R, C> {
             .take()
             .map_or_else(|| rmp::decode::read_marker(&mut self.rd), Ok)
     }
+
+    #[inline]
+    fn peek_or_read_marker(&mut self) -> Result<Marker, MarkerReadError> {
+        if let Some(m) = self.marker {
+            Ok(m)
+        } else {
+            let m = rmp::decode::read_marker(&mut self.rd)?;
+            Ok(self.marker.insert(m).to_owned())
+        }
+    }
+
+    #[inline]
+    fn discard_marker(&mut self) {
+        self.marker = None
+    }
 }
 
 impl<R: Read> Deserializer<ReadReader<R>, DefaultConfig> {
@@ -520,14 +535,12 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de>
         println!("MARKER: {:?}", marker);
 
         match marker {
-            Marker::Null => { 
+            Marker::Null => {
                 //panic!("here 4");
-                visitor.visit_unit() 
-            },
+                visitor.visit_unit()
+            }
             Marker::True | Marker::False => visitor.visit_bool(marker == Marker::True),
-            Marker::FixPos(val) => {
-                visitor.visit_u8(val)
-            },
+            Marker::FixPos(val) => visitor.visit_u8(val),
             Marker::FixNeg(val) => visitor.visit_i8(val),
             Marker::U8 => visitor.visit_u8(rmp::decode::read_data_u8(&mut self.rd)?),
             Marker::U16 => visitor.visit_u16(rmp::decode::read_data_u16(&mut self.rd)?),
@@ -636,16 +649,17 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> serde::Deserializer<'de>
     where
         V: Visitor<'de>,
     {
-        let marker = self.take_or_read_marker()?;
+        let marker = self.peek_or_read_marker()?;
+        //let marker = self.take_or_read_marker()?;
         match rmp::decode::marker_to_len(&mut self.rd, marker) {
             Ok(len) => match len {
-                1 => visitor.visit_enum(VariantAccess::new(self)),
+                1 => {
+                    self.discard_marker();
+                    visitor.visit_enum(VariantAccess::new(self))
+                }
                 n => Err(Error::LengthMismatch(n as u32)),
             },
-            Err(_) => {
-                println!("VISITING ENUM");
-                visitor.visit_enum(UnitVariantAccess::new(self))
-            }
+            Err(_) => visitor.visit_enum(UnitVariantAccess::new(self)),
         }
     }
 
@@ -868,7 +882,9 @@ impl<'de, 'a, R: ReadSlice<'de>, C: SerializerConfig> de::EnumAccess<'de>
     }
 }
 
-impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::VariantAccess<'de> for UnitVariantAccess<'a, R, C> {
+impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::VariantAccess<'de>
+    for UnitVariantAccess<'a, R, C>
+{
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
@@ -896,7 +912,11 @@ impl<'de, 'a, R: ReadSlice<'de> + 'a, C: SerializerConfig> de::VariantAccess<'de
         ))
     }
 
-    fn struct_variant<V>(self, _fields: &'static [&'static str], _visitor: V) -> Result<V::Value, Error>
+    fn struct_variant<V>(
+        self,
+        _fields: &'static [&'static str],
+        _visitor: V,
+    ) -> Result<V::Value, Error>
     where
         V: de::Visitor<'de>,
     {

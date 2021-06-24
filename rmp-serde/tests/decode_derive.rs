@@ -143,7 +143,10 @@ fn pass_unit_variant() {
                     ) -> _serde::__private::fmt::Result {
                         _serde::__private::Formatter::write_str(__formatter, "variant identifier")
                     }
-                    fn visit_u64<__E>(self, __value: u64) -> _serde::__private::Result<Self::Value, __E>
+                    fn visit_u64<__E>(
+                        self,
+                        __value: u64,
+                    ) -> _serde::__private::Result<Self::Value, __E>
                     where
                         __E: _serde::de::Error,
                     {
