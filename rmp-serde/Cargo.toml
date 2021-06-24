@@ -18,6 +18,7 @@ serde128 = []
 byteorder = "1.4.2"
 serde = "1.0.119"
 rmp = { version = "0.8.8", path = "../rmp" }
+serde_json = "1.0"
 
 [dev-dependencies]
 rmpv = { path = "../rmpv" }
