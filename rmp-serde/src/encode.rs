@@ -656,10 +656,7 @@ where
         idx: u32,
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        // encode as a map from variant idx to nil, like: {idx => nil}
-        encode::write_map_len(&mut self.wr, 1)?;
-        C::write_variant_ident(self, idx, variant)?;
-        self.serialize_unit()
+        C::write_variant_ident(self, idx, variant)
     }
 
     fn serialize_newtype_struct<T: ?Sized + serde::Serialize>(
