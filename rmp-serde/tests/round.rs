@@ -479,9 +479,7 @@ fn round_variant_string() {
             .with_struct_tuple()
             .with_struct_map()
     });
-    do_test!(|b| Serializer::new(b)
-        .with_integer_variants()
-        .with_string_variants());
+    do_test!(|b| Serializer::new(b).with_string_variants());
 }
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
