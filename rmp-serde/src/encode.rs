@@ -16,7 +16,7 @@ use rmp::{encode, Marker};
 
 use crate::config::{
     BinaryConfig, DefaultConfig, HumanReadableConfig, SerializerConfig, StructMapConfig,
-    StructTupleConfig, VariantStringConfig,
+    StructTupleConfig,
 };
 use crate::MSGPACK_EXT_STRUCT_NAME;
 
@@ -241,19 +241,6 @@ impl<W: Write, C> Serializer<W, C> {
             wr,
             depth,
             config: StructTupleConfig::new(config),
-        }
-    }
-
-    /// Consumes this serializer returning the new one, which will serialize enum variants as strings.
-    ///
-    /// This is the default MessagePack serialization mechanism.
-    #[inline]
-    pub fn with_string_variants(self) -> Serializer<W, VariantStringConfig<C>> {
-        let Serializer { wr, depth, config } = self;
-        Serializer {
-            wr,
-            depth,
-            config: VariantStringConfig::new(config),
         }
     }
 

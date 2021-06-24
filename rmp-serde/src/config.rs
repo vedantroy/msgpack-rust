@@ -219,63 +219,6 @@ where
     }
 }
 
-/// Config wrapper, that overrides enum serialization by serializing enum variant names as strings.
-///
-/// Default `Serializer` implementation writes enum names as integers, i.e. only indices are encoded,
-/// because it is the most compact representation.
-#[derive(Copy, Clone, Debug)]
-pub struct VariantStringConfig<C>(C);
-
-impl<C> VariantStringConfig<C> {
-    /// Creates a `VariantStringConfig` inheriting unchanged configuration options from the given configuration.
-    #[inline]
-    pub fn new(inner: C) -> Self {
-        VariantStringConfig(inner)
-    }
-}
-
-impl<C> sealed::SerializerConfig for VariantStringConfig<C>
-where
-    C: sealed::SerializerConfig,
-{
-    #[inline]
-    fn write_struct_len<S>(ser: &mut S, len: usize) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        C::write_struct_len(ser, len)
-    }
-
-    #[inline]
-    fn write_struct_field<S, T>(ser: &mut S, key: &'static str, value: &T) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-        T: ?Sized + Serialize,
-    {
-        C::write_struct_field(ser, key, value)
-    }
-
-    #[inline]
-    fn write_variant_ident<S>(
-        ser: &mut S,
-        _variant_index: u32,
-        variant: &'static str,
-    ) -> Result<(), Error>
-    where
-        S: UnderlyingWrite,
-        for<'a> &'a mut S: Serializer<Ok = (), Error = Error>,
-    {
-        ser.serialize_str(variant)
-    }
-
-    #[inline(always)]
-    fn is_human_readable() -> bool {
-        C::is_human_readable()
-    }
-}
-
 /// Config wrapper that overrides `Serializer::is_human_readable` and
 /// `Deserializer::is_human_readable` to return `true`.
 #[derive(Copy, Clone, Debug)]
